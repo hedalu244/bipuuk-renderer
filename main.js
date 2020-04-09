@@ -132,11 +132,13 @@ function NumToTree(num) {
         }
     }
 }
-function render(tree, context, canvas, lineWidth = 10, marginWidth = 10, cellSize = 20) {
-    const size = (cellSize + marginWidth) * Math.pow(2, Math.ceil(height(tree) / 2)) - marginWidth;
+function render(tree, context, canvas, lineWidth, marginWidth, cellSize, extraHeight) {
+    const size = (cellSize + 2 * lineWidth + marginWidth) * Math.pow(2, Math.ceil(height(tree) / 2) + extraHeight) - marginWidth;
     recursion(tree, (canvas.width - size) / 2, (canvas.height + size) / 2, (canvas.width - size) / 2, (canvas.height + size) / 2, 0);
     function height(tree) {
         if (tree === null)
+            return 0;
+        if (tree.car === null && tree.cdr === null)
             return 0;
         else
             return Math.max(height(tree.car), height(tree.cdr)) + 1;
@@ -241,12 +243,13 @@ onload = () => {
     const lineWidth = document.getElementById("lineWidth");
     const marginWidth = document.getElementById("marginWidth");
     const cellSize = document.getElementById("cellSize");
+    const extraHeight = document.getElementById("extraHeight");
     const canvas = document.getElementById("canvas");
     const context = canvas.getContext('2d');
     const str0 = document.getElementById("str0");
     const str1 = document.getElementById("str1");
     const str2 = document.getElementById("str2");
-    lineWidth.onchange = marginWidth.onchange = cellSize.onchange = input.onkeyup = update;
+    lineWidth.onchange = marginWidth.onchange = cellSize.onchange = extraHeight.onchange = input.onkeyup = update;
     function update() {
         context.clearRect(0, 0, canvas.width, canvas.height);
         str0.textContent = "";
@@ -257,7 +260,7 @@ onload = () => {
             str0.textContent = stringify0(tree);
             str1.textContent = stringify1(tree);
             str2.textContent = stringify2(tree);
-            render(tree, context, canvas, parseInt(lineWidth.value), parseInt(marginWidth.value), parseInt(cellSize.value));
+            render(tree, context, canvas, parseInt(lineWidth.value), parseInt(marginWidth.value), parseInt(cellSize.value), parseInt(extraHeight.value));
         }
         catch (e) {
         }
