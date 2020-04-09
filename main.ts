@@ -95,7 +95,7 @@ function map<T>(parser: parser<T>, fn: (_:node<T>[]) => T): parser<T> {
         return {success:true, rest: parsed.rest, done: [...result.done, dataNode(fn(parsed.done))]};
     });
 }
-function ignode<T>(parser: parser<T>): parser<T> {
+function ignore<T>(parser: parser<T>): parser<T> {
     return bind((result: parseSuccess<T>) => {
         let parsed = parser(startParse(result.rest));
         if (!parsed.success)
@@ -129,7 +129,7 @@ function cons(car: cons | null, cdr: cons | null): cons {
     }
 }
 
-function parse(input: string) : cons | null{
+function parse(input: string) : cons | null {
     const ws: parser<cons | null> = ignore(reg(/\s*/));
     const tree: parser<cons | null> = choice(
         map(seq(terminal("/"), pr=>ws(pr), pr=>tree(pr), pr=>ws(pr), terminal("\\"), pr=>ws(pr), pr=>tree(pr)), done => cons(done[1].data, done[3].data)),
