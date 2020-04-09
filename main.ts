@@ -144,3 +144,17 @@ function parse(input: string) : cons | null {
 
     throw Error("parse failed");
 }
+
+function stringify0(data: cons | null): string {
+    if (data === null) return "0";
+    else return "+" + stringify0(data.car) + stringify0(data.cdr);
+}
+
+onload = ()=>{
+    const input = document.getElementById("input");
+    const canvas = document.getElementById("canvas");
+    input.onchange = () => {
+        const data = parse(input.value);
+        console.log(stringify0(data));
+    }
+}

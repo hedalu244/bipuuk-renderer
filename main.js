@@ -61,7 +61,7 @@ function map(parser, fn) {
         return { success: true, rest: parsed.rest, done: [...result.done, dataNode(fn(parsed.done))] };
     });
 }
-function ignode(parser) {
+function ignore(parser) {
     return bind((result) => {
         let parsed = parser(startParse(result.rest));
         if (!parsed.success)
@@ -90,9 +90,28 @@ function cons(car, cdr) {
     };
 }
 function parse(input) {
-    const tree = choice(map(seq(terminal("/"), (pr) => tree(pr), terminal("\\"), pr => tree(pr)), done => cons(done[1].data, done[3].data)), map(epsilon(), _ => null));
+    const ws = ignore(reg(/\s*/));
+    const tree = choice(map(seq(terminal("/"), pr => ws(pr), pr => tree(pr), pr => ws(pr), terminal("\\"), pr => ws(pr), pr => tree(pr)), done => cons(done[1].data, done[3].data)), map(seq(terminal("+"), pr => ws(pr), pr => tree(pr), pr => ws(pr), pr => tree(pr)), done => cons(done[1].data, done[2].data)), map(terminal("0"), _ => null), map(epsilon(), _ => null));
     const pr = tree(startParse(input));
     if (pr.success && pr.rest === "" && pr.done.length === 1 && pr.done[0].type === "dataNode")
         return pr.done[0].data;
     throw Error("parse failed");
 }
+function stringify0(data) {
+    if (data === null)
+        return "0";
+    else
+        return "+" + stringify0(data.car) + stringify0(data.cdr);
+}
+onload = () => {
+    const input = document.getElementById("input");
+    const canvas = document.getElementById("canvas");
+    input.oninput = () => {
+        try { const data = parse(input.value);
+            console.log(stringify0(data));
+        }
+        catch (e) {
+
+        }
+    };
+};
