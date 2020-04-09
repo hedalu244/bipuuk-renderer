@@ -1,6 +1,6 @@
 interface Cons {
-    car: Cons | null;
-    cdr: Cons | null;
+    car: tree;
+    cdr: tree;
 }
 
 type node<T> = terminalNode /* | nonterminalNode*/ | dataNode<T>
@@ -119,19 +119,20 @@ function startParse<T>(input: string): parseResult<T> {
 }
 
 interface cons {
-    car: cons | null;
-    cdr: cons | null;
+    car: tree;
+    cdr: tree;
 }
-function cons(car: cons | null, cdr: cons | null): cons {
+type tree = cons | null;
+function cons(car: tree, cdr: tree): cons {
     return {
         car,
         cdr
     }
 }
 
-function parse(input: string) : cons | null {
-    const ws: parser<cons | null> = ignore(reg(/\s*/));
-    const tree: parser<cons | null> = choice(
+function parse(input: string) : tree {
+    const ws: parser<tree> = ignore(reg(/\s*/));
+    const tree: parser<tree> = choice(
         map(seq(terminal("/"), pr=>ws(pr), pr=>tree(pr), pr=>ws(pr), terminal("\\"), pr=>ws(pr), pr=>tree(pr)), done => cons(done[1].data, done[3].data)),
         map(seq(terminal("+"), pr=>ws(pr), pr=>tree(pr), pr=>ws(pr), pr=>tree(pr)), done => cons(done[1].data, done[2].data)),
         map(terminal("0"), _=>null),
@@ -144,17 +145,116 @@ function parse(input: string) : cons | null {
 
     throw Error("parse failed");
 }
+type direction = 0 | 1 | 2 | 3 // ↑、←、↓、→
+function render(tree: tree, context: CanvasRenderingContext2D, canvas, lineWidth:number = 10, marginWidth:number = 10, cellSize:number = 20) {
+    const size = (cellSize + marginWidth) * Math.pow(2, Math.ceil(height(tree) / 2)) - marginWidth;
+    recursion(tree, (canvas.width - size) / 2, (canvas.height + size) / 2, (canvas.width - size) / 2, (canvas.height + size) / 2, 0);
 
-function stringify0(data: cons | null): string {
-    if (data === null) return "0";
-    else return "+" + stringify0(data.car) + stringify0(data.cdr);
-}
-
-onload = ()=>{
-    const input = document.getElementById("input");
-    const canvas = document.getElementById("canvas");
-    input.onchange = () => {
-        const data = parse(input.value);
-        console.log(stringify0(data));
+    function height(tree: tree): number {
+        if(tree === null) return 0;
+        else return Math.max(height(tree.car), height(tree.cdr)) + 1;
+    }
+    function recursion(tree: tree, x1: number, x2: number, y1: number, y2: number, direction: direction): void {
+        if(tree === null) {
+            //コの字
+            if (direction === 0) {
+                //context.fillRect(x1, y1, x2 - x1, lineWidth);//上辺
+                context.fillRect(x1, y1, lineWidth, y2 - y1);//左辺
+                context.fillRect(x1, y2 - lineWidth, x2 - x1, lineWidth);//下辺
+                context.fillRect(x2 - lineWidth, y1, lineWidth, y2 - y1);//右編
+            }
+            if (direction === 1) {
+                context.fillRect(x1, y1, x2 - x1, lineWidth);//上辺
+                //context.fillRect(x1, y1, lineWidth, y2 - y1);//左辺
+                context.fillRect(x1, y2 - lineWidth, x2 - x1, lineWidth);//下辺
+                context.fillRect(x2 - lineWidth, y1, lineWidth, y2 - y1);//右編
+            }
+            if (direction === 2) {
+                context.fillRect(x1, y1, x2 - x1, lineWidth);//上辺
+                context.fillRect(x1, y1, lineWidth, y2 - y1);//左辺
+                //context.fillRect(x1, y2 - lineWidth, x2 - x1, lineWidth);//下辺
+                context.fillRect(x2 - lineWidth, y1, lineWidth, y2 - y1);//右編
+            }
+            if (direction === 3) {
+                context.fillRect(x1, y1, x2 - x1, lineWidth);//上辺
+                context.fillRect(x1, y1, lineWidth, y2 - y1);//左辺
+                context.fillRect(x1, y2 - lineWidth, x2 - x1, lineWidth);//下辺
+                //context.fillRect(x2 - lineWidth, y1, lineWidth, y2 - y1);//右編
+            }
+        }
+        else if(tree.car === null && tree.cdr === null) {
+            //塗りつぶし
+            context.fillRect(x1, y1, x2-x1, y2-y1);
+        }
+        else {
+            if (direction === 0 || direction === 2) {
+                const x3 = (x1 + x2 - marginWidth) / 2;
+                const x4 = (x1 + x2 + marginWidth) / 2;
+                //上に開くとき
+                if (direction === 0) {
+                    //下端に繋ぎの線
+                    context.fillRect(x3, y2 - lineWidth, marginWidth, lineWidth);
+                    //左半分
+                    recursion(tree.car, x1, x3, y1, y2, 1);
+                    //右半分
+                    recursion(tree.cdr, x4, x2, y1, y2, 3);
+                }
+                //下に開くとき
+                else {
+                    //上端に繋ぎの線
+                    context.fillRect(x3, y1, marginWidth, lineWidth);
+                    //右半分
+                    recursion(tree.car, x4, x2, y1, y2, 3);
+                    //左半分
+                    recursion(tree.cdr, x1, x3, y1, y2, 1);
+                }
+            }
+            else {
+                const y3 = (y1 + y2 - marginWidth) / 2;
+                const y4 = (y1 + y2 + marginWidth) / 2;
+                //左に開くとき
+                if (direction === 1) {
+                    //右に繋ぎの線
+                    context.fillRect(x2 - lineWidth, y3, lineWidth, marginWidth);
+                    //下半分
+                    recursion(tree.car, x1, x2, y4, y2, 2);
+                    //上半分
+                    recursion(tree.cdr, x1, x2, y1, y3, 0);
+                }
+                //右に開くとき
+                else {
+                    //左に繋ぎの線
+                    context.fillRect(x1, y3, lineWidth, marginWidth);
+                    //上半分
+                    recursion(tree.car, x1, x2, y1, y3, 0);
+                    //下半分
+                    recursion(tree.cdr, x1, x2, y4, y2, 2);
+                }
+            }
+        }
     }
 }
+function stringify0(tree: tree): string {
+    if (tree === null) return "0";
+    else return "+" + stringify0(tree.car) + stringify0(tree.cdr);
+}
+
+onload = () => {
+    const input = document.getElementById("input");
+    const lineWidth = document.getElementById("lineWidth");
+    const marginWidth = document.getElementById("marginWidth");
+    const cellSize = document.getElementById("cellSize");
+    const canvas = document.getElementById("canvas");
+    const context = canvas.getContext('2d');
+    lineWidth.onchange = marginWidth.onchange = cellSize.onchange = input.onkeyup = update;
+    function update() {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        try {
+            const tree = parse(input.value);
+            console.log(stringify0(tree));
+            render(tree, context, canvas, parseInt(lineWidth.value), parseInt(marginWidth.value), parseInt(cellSize.value));
+        }
+        catch (e) {
+        }
+    }
+};

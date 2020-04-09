@@ -97,21 +97,117 @@ function parse(input) {
         return pr.done[0].data;
     throw Error("parse failed");
 }
-function stringify0(data) {
-    if (data === null)
+function render(tree, context, canvas, lineWidth = 10, marginWidth = 10, cellSize = 20) {
+    const size = (cellSize + marginWidth) * Math.pow(2, Math.ceil(height(tree) / 2)) - marginWidth;
+    recursion(tree, (canvas.width - size) / 2, (canvas.height + size) / 2, (canvas.width - size) / 2, (canvas.height + size) / 2, 0);
+    function height(tree) {
+        if (tree === null)
+            return 0;
+        else
+            return Math.max(height(tree.car), height(tree.cdr)) + 1;
+    }
+    function recursion(tree, x1, x2, y1, y2, direction) {
+        if (tree === null) {
+            //コの字
+            if (direction === 0) {
+                //context.fillRect(x1, y1, x2 - x1, lineWidth);//上辺
+                context.fillRect(x1, y1, lineWidth, y2 - y1); //左辺
+                context.fillRect(x1, y2 - lineWidth, x2 - x1, lineWidth); //下辺
+                context.fillRect(x2 - lineWidth, y1, lineWidth, y2 - y1); //右編
+            }
+            if (direction === 1) {
+                context.fillRect(x1, y1, x2 - x1, lineWidth); //上辺
+                //context.fillRect(x1, y1, lineWidth, y2 - y1);//左辺
+                context.fillRect(x1, y2 - lineWidth, x2 - x1, lineWidth); //下辺
+                context.fillRect(x2 - lineWidth, y1, lineWidth, y2 - y1); //右編
+            }
+            if (direction === 2) {
+                context.fillRect(x1, y1, x2 - x1, lineWidth); //上辺
+                context.fillRect(x1, y1, lineWidth, y2 - y1); //左辺
+                //context.fillRect(x1, y2 - lineWidth, x2 - x1, lineWidth);//下辺
+                context.fillRect(x2 - lineWidth, y1, lineWidth, y2 - y1); //右編
+            }
+            if (direction === 3) {
+                context.fillRect(x1, y1, x2 - x1, lineWidth); //上辺
+                context.fillRect(x1, y1, lineWidth, y2 - y1); //左辺
+                context.fillRect(x1, y2 - lineWidth, x2 - x1, lineWidth); //下辺
+                //context.fillRect(x2 - lineWidth, y1, lineWidth, y2 - y1);//右編
+            }
+        }
+        else if (tree.car === null && tree.cdr === null) {
+            //塗りつぶし
+            context.fillRect(x1, y1, x2 - x1, y2 - y1);
+        }
+        else {
+            if (direction === 0 || direction === 2) {
+                const x3 = (x1 + x2 - marginWidth) / 2;
+                const x4 = (x1 + x2 + marginWidth) / 2;
+                //上に開くとき
+                if (direction === 0) {
+                    //下端に繋ぎの線
+                    context.fillRect(x3, y2 - lineWidth, marginWidth, lineWidth);
+                    //左半分
+                    recursion(tree.car, x1, x3, y1, y2, 1);
+                    //右半分
+                    recursion(tree.cdr, x4, x2, y1, y2, 3);
+                }
+                //下に開くとき
+                else {
+                    //上端に繋ぎの線
+                    context.fillRect(x3, y1, marginWidth, lineWidth);
+                    //右半分
+                    recursion(tree.car, x4, x2, y1, y2, 3);
+                    //左半分
+                    recursion(tree.cdr, x1, x3, y1, y2, 1);
+                }
+            }
+            else {
+                const y3 = (y1 + y2 - marginWidth) / 2;
+                const y4 = (y1 + y2 + marginWidth) / 2;
+                //左に開くとき
+                if (direction === 1) {
+                    //右に繋ぎの線
+                    context.fillRect(x2 - lineWidth, y3, lineWidth, marginWidth);
+                    //下半分
+                    recursion(tree.car, x1, x2, y4, y2, 2);
+                    //上半分
+                    recursion(tree.cdr, x1, x2, y1, y3, 0);
+                }
+                //右に開くとき
+                else {
+                    //左に繋ぎの線
+                    context.fillRect(x1, y3, lineWidth, marginWidth);
+                    //上半分
+                    recursion(tree.car, x1, x2, y1, y3, 0);
+                    //下半分
+                    recursion(tree.cdr, x1, x2, y4, y2, 2);
+                }
+            }
+        }
+    }
+}
+function stringify0(tree) {
+    if (tree === null)
         return "0";
     else
-        return "+" + stringify0(data.car) + stringify0(data.cdr);
+        return "+" + stringify0(tree.car) + stringify0(tree.cdr);
 }
 onload = () => {
     const input = document.getElementById("input");
+    const lineWidth = document.getElementById("lineWidth");
+    const marginWidth = document.getElementById("marginWidth");
+    const cellSize = document.getElementById("cellSize");
     const canvas = document.getElementById("canvas");
-    input.oninput = () => {
-        try { const data = parse(input.value);
-            console.log(stringify0(data));
+    const context = canvas.getContext('2d');
+    lineWidth.onchange = marginWidth.onchange = cellSize.onchange = input.onkeyup = update;
+    function update() {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        try {
+            const tree = parse(input.value);
+            console.log(stringify0(tree));
+            render(tree, context, canvas, parseInt(lineWidth.value), parseInt(marginWidth.value), parseInt(cellSize.value));
         }
         catch (e) {
-
         }
-    };
+    }
 };
