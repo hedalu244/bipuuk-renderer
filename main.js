@@ -91,11 +91,46 @@ function cons(car, cdr) {
 }
 function parse(input) {
     const ws = ignore(reg(/\s*/));
-    const tree = choice(map(seq(terminal("/"), pr => ws(pr), pr => tree(pr), pr => ws(pr), terminal("\\"), pr => ws(pr), pr => tree(pr)), done => cons(done[1].data, done[3].data)), map(seq(terminal("+"), pr => ws(pr), pr => tree(pr), pr => ws(pr), pr => tree(pr)), done => cons(done[1].data, done[2].data)), map(terminal("0"), _ => null), map(epsilon(), _ => null));
+    const tree = choice(map(seq(terminal("/"), pr => ws(pr), pr => tree(pr), pr => ws(pr), terminal("\\"), pr => ws(pr), pr => tree(pr)), done => cons(done[1].data, done[3].data)), map(seq(terminal("+"), pr => ws(pr), pr => tree(pr), pr => ws(pr), pr => tree(pr)), done => cons(done[1].data, done[2].data)), map(reg(/[0-9]+/), done => NumToTree(BigInt(done[0].literal))), map(terminal("-"), _ => null), map(epsilon(), _ => null));
     const pr = tree(startParse(input));
     if (pr.success && pr.rest === "" && pr.done.length === 1 && pr.done[0].type === "dataNode")
         return pr.done[0].data;
     throw Error("parse failed");
+}
+function TreeToNum(tree) {
+    if (tree === null)
+        return 0n;
+    else {
+        const x = TreeToNum(tree.car);
+        const y = TreeToNum(tree.cdr);
+        const [min, max] = [x, y].sort((a, b) => a < b ? -1 : b < a ? 1 : 0);
+        return max * max - min + 2n * x + 1n;
+    }
+}
+function NumToTree(num) {
+    if (num === 0n)
+        return null;
+    else {
+        const a = sqrt(num - 1n);
+        const b = num - a * a - 1n;
+        const [min, max] = [a, b].sort((a, b) => a < b ? -1 : b < a ? 1 : 0);
+        const x = min;
+        const y = 2n * a - max;
+        return cons(NumToTree(x), NumToTree(y));
+    }
+    function sqrt(value) {
+        if (value < 0n)
+            throw Error("negative");
+        if (value < 2n)
+            return value;
+        return r(value, value);
+        function r(n, x0) {
+            const x1 = ((n / x0) + x0) / 2n;
+            if (x0 === x1 || x0 === (x1 - 1n))
+                return x0;
+            return r(n, x1);
+        }
+    }
 }
 function render(tree, context, canvas, lineWidth = 10, marginWidth = 10, cellSize = 20) {
     const size = (cellSize + marginWidth) * Math.pow(2, Math.ceil(height(tree) / 2)) - marginWidth;
@@ -188,9 +223,18 @@ function render(tree, context, canvas, lineWidth = 10, marginWidth = 10, cellSiz
 }
 function stringify0(tree) {
     if (tree === null)
-        return "0";
+        return "-";
     else
         return "+" + stringify0(tree.car) + stringify0(tree.cdr);
+}
+function stringify1(tree) {
+    if (tree === null)
+        return "";
+    else
+        return "/" + stringify1(tree.car) + "\\" + stringify1(tree.cdr);
+}
+function stringify2(tree) {
+    return TreeToNum(tree).toString();
 }
 onload = () => {
     const input = document.getElementById("input");
@@ -199,12 +243,20 @@ onload = () => {
     const cellSize = document.getElementById("cellSize");
     const canvas = document.getElementById("canvas");
     const context = canvas.getContext('2d');
+    const str0 = document.getElementById("str0");
+    const str1 = document.getElementById("str1");
+    const str2 = document.getElementById("str2");
     lineWidth.onchange = marginWidth.onchange = cellSize.onchange = input.onkeyup = update;
     function update() {
         context.clearRect(0, 0, canvas.width, canvas.height);
+        str0.textContent = "";
+        str1.textContent = "";
+        str2.textContent = "";
         try {
             const tree = parse(input.value);
-            console.log(stringify0(tree));
+            str0.textContent = stringify0(tree);
+            str1.textContent = stringify1(tree);
+            str2.textContent = stringify2(tree);
             render(tree, context, canvas, parseInt(lineWidth.value), parseInt(marginWidth.value), parseInt(cellSize.value));
         }
         catch (e) {
