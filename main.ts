@@ -193,6 +193,10 @@ function render(tree: tree, context: CanvasRenderingContext2D, canvas, lineWidth
     }
     function recursion(tree: tree, x1: number, x2: number, y1: number, y2: number, direction: direction): void {
         if(tree === null) {
+            //塗りつぶし
+            context.fillRect(x1, y1, x2-x1, y2-y1);
+        }
+        else if(tree.car === null && tree.cdr === null) {
             //コの字
             if (direction === 0) {
                 //context.fillRect(x1, y1, x2 - x1, lineWidth);//上辺
@@ -218,10 +222,6 @@ function render(tree: tree, context: CanvasRenderingContext2D, canvas, lineWidth
                 context.fillRect(x1, y2 - lineWidth, x2 - x1, lineWidth);//下辺
                 //context.fillRect(x2 - lineWidth, y1, lineWidth, y2 - y1);//右編
             }
-        }
-        else if(tree.car === null && tree.cdr === null) {
-            //塗りつぶし
-            context.fillRect(x1, y1, x2-x1, y2-y1);
         }
         else {
             if (direction === 0 || direction === 2) {
