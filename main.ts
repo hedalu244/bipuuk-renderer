@@ -183,12 +183,12 @@ function NumToTree(num: bigint): tree{
 
 type direction = 0 | 1 | 2 | 3 // ↑、←、↓、→
 function render(tree: tree, context: CanvasRenderingContext2D, canvas, lineWidth:number, marginWidth:number, cellSize:number, extraHeight :number) {
-    const size = (cellSize + 2*lineWidth + marginWidth) * Math.pow(2, Math.ceil(height(tree) / 2) + extraHeight) - marginWidth;
+    const size = (cellSize + 2 * lineWidth + marginWidth) * Math.pow(2, Math.ceil(height(tree) / 2)) - marginWidth;
     recursion(tree, (canvas.width - size) / 2, (canvas.height + size) / 2, (canvas.width - size) / 2, (canvas.height + size) / 2, 0);
 
     function height(tree: tree): number {
-        if(tree === null) return 0;
-        if(tree.car === null && tree.cdr === null) return 0;
+        if(tree === null) return extraHeight;
+        else if(tree.car === null && tree.cdr === null) return extraHeight;
         else return Math.max(height(tree.car), height(tree.cdr)) + 1;
     }
     function recursion(tree: tree, x1: number, x2: number, y1: number, y2: number, direction: direction): void {

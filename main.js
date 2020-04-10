@@ -133,13 +133,13 @@ function NumToTree(num) {
     }
 }
 function render(tree, context, canvas, lineWidth, marginWidth, cellSize, extraHeight) {
-    const size = (cellSize + 2 * lineWidth + marginWidth) * Math.pow(2, Math.ceil(height(tree) / 2) + extraHeight) - marginWidth;
+    const size = (cellSize + 2 * lineWidth + marginWidth) * Math.pow(2, Math.ceil(height(tree) / 2)) - marginWidth;
     recursion(tree, (canvas.width - size) / 2, (canvas.height + size) / 2, (canvas.width - size) / 2, (canvas.height + size) / 2, 0);
     function height(tree) {
         if (tree === null)
-            return 0;
-        if (tree.car === null && tree.cdr === null)
-            return 0;
+            return extraHeight;
+        else if (tree.car === null && tree.cdr === null)
+            return extraHeight;
         else
             return Math.max(height(tree.car), height(tree.cdr)) + 1;
     }
