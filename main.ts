@@ -182,90 +182,85 @@ function NumToTree(num: bigint): tree{
 }
 
 type direction = 0 | 1 | 2 | 3 // ↑、←、↓、→
-function render(tree: tree, context: CanvasRenderingContext2D, canvas, lineWidth:number, marginWidth:number, cellSize:number, extraHeight :number) {
+type fillMode = "none" | "selective" | "all"
+function render(tree: tree, context: CanvasRenderingContext2D, canvas, lineWidth:number, marginWidth:number, cellSize:number, extraHeight :number, fillMode: fillMode) {
     const size = (cellSize + 2 * lineWidth + marginWidth) * Math.pow(2, Math.ceil((height(tree) + extraHeight) / 2)) - marginWidth;
-    recursion(tree, (canvas.width - size) / 2, (canvas.height + size) / 2, (canvas.width - size) / 2, (canvas.height + size) / 2, 0);
+    recursion(tree, (canvas.width - size) / 2, (canvas.height + size) / 2, (canvas.width - size) / 2, (canvas.height + size) / 2, 0, 3, true);
 
     function height(tree: tree): number {
         if(tree === null) return 0;
         else if(tree.car === null && tree.cdr === null) return 0;
         else return Math.max(height(tree.car), height(tree.cdr)) + 1;
     }
-    function recursion(tree: tree, x1: number, x2: number, y1: number, y2: number, direction: direction): void {
+    function recursion(tree: tree, x1: number, x2: number, y1: number, y2: number, direction1: direction, direction2: direction, fill: boolean): void {
         if(tree === null) {
+            //L字
+            if (direction1 === 0)
+                context.fillRect(x1, y1, x2 - x1, lineWidth);//上辺
+            if (direction1 === 1)
+                context.fillRect(x1, y1, lineWidth, y2 - y1);//左辺
+            if (direction1 === 2)
+                context.fillRect(x1, y2 - lineWidth, x2 - x1, lineWidth);//下辺
+            if (direction1 === 3)
+                context.fillRect(x2 - lineWidth, y1, lineWidth, y2 - y1);//右編
+
+            if (direction2 === 0)
+                context.fillRect(x1, y2 - lineWidth, x2 - x1, lineWidth);//下辺
+            if (direction2 === 1)
+                context.fillRect(x2 - lineWidth, y1, lineWidth, y2 - y1);//右編
+            if (direction2 === 2)
+                context.fillRect(x1, y1, x2 - x1, lineWidth);//上辺
+            if (direction2 === 3)
+                context.fillRect(x1, y1, lineWidth, y2 - y1);//左辺
+
             //塗りつぶし
-            context.fillRect(x1, y1, x2-x1, y2-y1);
-        }
-        else if(tree.car === null && tree.cdr === null) {
-            //コの字
-            if (direction === 0) {
-                //context.fillRect(x1, y1, x2 - x1, lineWidth);//上辺
-                context.fillRect(x1, y1, lineWidth, y2 - y1);//左辺
-                context.fillRect(x1, y2 - lineWidth, x2 - x1, lineWidth);//下辺
-                context.fillRect(x2 - lineWidth, y1, lineWidth, y2 - y1);//右編
-            }
-            if (direction === 1) {
-                context.fillRect(x1, y1, x2 - x1, lineWidth);//上辺
-                //context.fillRect(x1, y1, lineWidth, y2 - y1);//左辺
-                context.fillRect(x1, y2 - lineWidth, x2 - x1, lineWidth);//下辺
-                context.fillRect(x2 - lineWidth, y1, lineWidth, y2 - y1);//右編
-            }
-            if (direction === 2) {
-                context.fillRect(x1, y1, x2 - x1, lineWidth);//上辺
-                context.fillRect(x1, y1, lineWidth, y2 - y1);//左辺
-                //context.fillRect(x1, y2 - lineWidth, x2 - x1, lineWidth);//下辺
-                context.fillRect(x2 - lineWidth, y1, lineWidth, y2 - y1);//右編
-            }
-            if (direction === 3) {
-                context.fillRect(x1, y1, x2 - x1, lineWidth);//上辺
-                context.fillRect(x1, y1, lineWidth, y2 - y1);//左辺
-                context.fillRect(x1, y2 - lineWidth, x2 - x1, lineWidth);//下辺
-                //context.fillRect(x2 - lineWidth, y1, lineWidth, y2 - y1);//右編
-            }
+            if (fill)
+                context.fillRect(x1, y1, x2-x1, y2-y1);
         }
         else {
-            if (direction === 0 || direction === 2) {
+            const nextFill = fillMode === "all" || fillMode === "selective" && (tree.car !== null || tree.cdr !== null);
+            if (direction1 === 0 || direction1 === 2) {
                 const x3 = (x1 + x2 - marginWidth) / 2;
                 const x4 = (x1 + x2 + marginWidth) / 2;
                 //上に開くとき
-                if (direction === 0) {
+                if (direction1 === 0) {
                     //下端に繋ぎの線
                     context.fillRect(x3, y2 - lineWidth, marginWidth, lineWidth);
                     //左半分
-                    recursion(tree.car, x1, x3, y1, y2, 1);
+                    recursion(tree.car, x1, x3, y1, y2, 1, 0, nextFill);
                     //右半分
-                    recursion(tree.cdr, x4, x2, y1, y2, 3);
+                    recursion(tree.cdr, x4, x2, y1, y2, 3, 0, nextFill);
                 }
                 //下に開くとき
                 else {
                     //上端に繋ぎの線
                     context.fillRect(x3, y1, marginWidth, lineWidth);
                     //右半分
-                    recursion(tree.car, x4, x2, y1, y2, 3);
+                    recursion(tree.car, x4, x2, y1, y2, 3, 2, nextFill);
                     //左半分
-                    recursion(tree.cdr, x1, x3, y1, y2, 1);
+                    recursion(tree.cdr, x1, x3, y1, y2, 1, 2, nextFill);
                 }
             }
             else {
                 const y3 = (y1 + y2 - marginWidth) / 2;
                 const y4 = (y1 + y2 + marginWidth) / 2;
                 //左に開くとき
-                if (direction === 1) {
+                if (direction1 === 1) {
                     //右に繋ぎの線
                     context.fillRect(x2 - lineWidth, y3, lineWidth, marginWidth);
                     //下半分
-                    recursion(tree.car, x1, x2, y4, y2, 2);
+                    recursion(tree.car, x1, x2, y4, y2, 2, 1, nextFill);
                     //上半分
-                    recursion(tree.cdr, x1, x2, y1, y3, 0);
+                    recursion(tree.cdr, x1, x2, y1, y3, 0, 1, nextFill);
                 }
                 //右に開くとき
                 else {
                     //左に繋ぎの線
                     context.fillRect(x1, y3, lineWidth, marginWidth);
                     //上半分
-                    recursion(tree.car, x1, x2, y1, y3, 0);
+                    recursion(tree.car, x1, x2, y1, y3, 0, 3, nextFill);
                     //下半分
-                    recursion(tree.cdr, x1, x2, y4, y2, 2);
+                    recursion(tree.cdr, x1, x2, y4, y2, 2, 3, nextFill);
                 }
             }
         }
@@ -289,13 +284,13 @@ onload = () => {
     const marginWidth = document.getElementById("marginWidth");
     const cellSize = document.getElementById("cellSize");
     const extraHeight = document.getElementById("extraHeight");
+    const fillMode = document.getElementById("fillMode");
     const canvas = document.getElementById("canvas");
     const context = canvas.getContext('2d');
-
     const str0 = document.getElementById("str0");
     const str1 = document.getElementById("str1");
     const str2 = document.getElementById("str2");
-    lineWidth.onchange = marginWidth.onchange = cellSize.onchange = extraHeight.onchange = input.onkeyup = update;
+    lineWidth.onchange = marginWidth.onchange = cellSize.onchange = extraHeight.onchange = fillMode.onchange = input.onkeyup = update;
     function update() {
         context.clearRect(0, 0, canvas.width, canvas.height);
         str0.textContent = "";
@@ -306,7 +301,7 @@ onload = () => {
             str0.textContent = stringify0(tree);
             str1.textContent = stringify1(tree);
             str2.textContent = stringify2(tree);
-            render(tree, context, canvas, parseInt(lineWidth.value), parseInt(marginWidth.value),  parseInt(cellSize.value), parseInt(extraHeight.value),);
+            render(tree, context, canvas, parseInt(lineWidth.value), parseInt(marginWidth.value), parseInt(cellSize.value), parseInt(extraHeight.value), fillMode.value);
         }
         catch (e) {
         }
