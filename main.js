@@ -168,13 +168,14 @@ function render(tree, context, canvas, lineWidth, marginWidth, cellSize, extraHe
         }
         else {
             const nextFill = fillMode === "all" || fillMode === "selective" && (tree.car !== null || tree.cdr !== null);
+            const bridgeLength = (tree.car == null && tree.cdr == null) ? cellSize : marginWidth;
             if (direction1 === 0 || direction1 === 2) {
-                const x3 = (x1 + x2 - marginWidth) / 2;
-                const x4 = (x1 + x2 + marginWidth) / 2;
+                const x3 = (x1 + x2 - bridgeLength) / 2;
+                const x4 = (x1 + x2 + bridgeLength) / 2;
                 //上に開くとき
                 if (direction1 === 0) {
                     //下端に繋ぎの線
-                    context.fillRect(x3, y2 - lineWidth, marginWidth, lineWidth);
+                    context.fillRect(x3, y2 - lineWidth, bridgeLength, lineWidth);
                     //左半分
                     recursion(tree.car, x1, x3, y1, y2, 1, 0, nextFill);
                     //右半分
@@ -183,7 +184,7 @@ function render(tree, context, canvas, lineWidth, marginWidth, cellSize, extraHe
                 //下に開くとき
                 else {
                     //上端に繋ぎの線
-                    context.fillRect(x3, y1, marginWidth, lineWidth);
+                    context.fillRect(x3, y1, bridgeLength, lineWidth);
                     //右半分
                     recursion(tree.car, x4, x2, y1, y2, 3, 2, nextFill);
                     //左半分
@@ -191,12 +192,12 @@ function render(tree, context, canvas, lineWidth, marginWidth, cellSize, extraHe
                 }
             }
             else {
-                const y3 = (y1 + y2 - marginWidth) / 2;
-                const y4 = (y1 + y2 + marginWidth) / 2;
+                const y3 = (y1 + y2 - bridgeLength) / 2;
+                const y4 = (y1 + y2 + bridgeLength) / 2;
                 //左に開くとき
                 if (direction1 === 1) {
                     //右に繋ぎの線
-                    context.fillRect(x2 - lineWidth, y3, lineWidth, marginWidth);
+                    context.fillRect(x2 - lineWidth, y3, lineWidth, bridgeLength);
                     //下半分
                     recursion(tree.car, x1, x2, y4, y2, 2, 1, nextFill);
                     //上半分
@@ -205,7 +206,7 @@ function render(tree, context, canvas, lineWidth, marginWidth, cellSize, extraHe
                 //右に開くとき
                 else {
                     //左に繋ぎの線
-                    context.fillRect(x1, y3, lineWidth, marginWidth);
+                    context.fillRect(x1, y3, lineWidth, bridgeLength);
                     //上半分
                     recursion(tree.car, x1, x2, y1, y3, 0, 3, nextFill);
                     //下半分
